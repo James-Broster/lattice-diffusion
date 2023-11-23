@@ -1,12 +1,13 @@
 import matplotlib.pyplot as plt
 
 # Define the system dimensions
-width = 25
-height = 25
+width = 30
+height = 30
 
 # Define the initial concentrations
 concentrations = [[0.0 for _ in range(width)] for _ in range(height)]
-concentrations[4][4] = 100
+concentrations[4][4] = 300
+#concentrations[35][35] = 300
 
 # Define the AgentBasedSystem class
 class Agent:
@@ -26,7 +27,7 @@ class AgentBasedSystem:
                 agent = Agent(concentration)
                 self.grid[i][j] = agent
 
-    def diffuse(self):
+    def diffuse_og(self):
         new_grid = [[None for _ in range(self.width)] for _ in range(self.height)]
         for i in range(self.height):
             for j in range(self.width):
@@ -52,6 +53,52 @@ class AgentBasedSystem:
                 new_grid[i][j] = new_agent
 
         self.grid = new_grid
+
+        def diffuse(self):
+            new_grid = [[None for _ in range(self.width)] for _ in range(self.height)]
+            for i in range(self.height):
+                for j in range(self.width):
+                    agent = self.grid[i][j]
+                    current_concentration = agent.concentration
+
+                    # Calculate adjacent cell indices with periodic boundary conditions
+                    left = (j - 1) % self.width
+                    right = (j + 1) % self.width
+                    up = (i - 1) % self.height
+                    down = (i + 1) % self.height
+
+                    adjacent_concentrations = [
+                        self.grid[i][left].concentration,
+                        self.grid[i][right].concentration,
+                        self.grid[up][j].concentration,
+                        self.grid[down][j].concentration
+                    ]
+
+                    differences = [current_concentration - concentration for concentration in adjacent_concentrations]
+                    probabilities = [max(0, difference) for difference in differences]
+                    total_probability = sum(probabilities)
+
+                    # Calculate the probabilities for staying in the current cell
+                    stay_probability = 1 - total_probability
+
+                    # Generate a random number between 0 and 1
+                    random_number = random.random()
+
+                    # Determine the new concentration based on the random number and probabilities
+                    if random_number < stay_probability:
+                        new_concentration = current_concentration
+                    else:
+                        cumulative_probability = 0
+                        for index, probability in enumerate(probabilities):
+                            cumulative_probability += probability / total_probability
+                            if random_number < cumulative_probability:
+                                new_concentration = adjacent_concentrations[index]
+                                break
+
+                    new_agent = Agent(new_concentration)
+                    new_grid[i][j] = new_agent
+
+            self.grid = new_grid
 
 class Run:
     def __init__(self, width, height, concentrations):
@@ -82,7 +129,7 @@ run = Run(width, height, concentrations)
 run.visualize_initial_state()
 
 # Perform diffusion
-num_timesteps = 100  # Number of diffusion steps
+num_timesteps = 1500  # Number of diffusion steps
 run.run_simulation(num_timesteps)
 
 # Visualize the final state
