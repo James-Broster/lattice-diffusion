@@ -6,7 +6,7 @@ height = 25
 
 # Define the initial concentrations
 concentrations = [[0.0 for _ in range(width)] for _ in range(height)]
-concentrations[4][4] = 100.0
+concentrations[4][4] = 100
 
 # Define the AgentBasedSystem class
 class Agent:
