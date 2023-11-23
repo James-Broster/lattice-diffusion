@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 
 # Define the system dimensions
-width = 10
-height = 10
+width = 25
+height = 25
 
 # Define the initial concentrations
 concentrations = [[0.0 for _ in range(width)] for _ in range(height)]
-concentrations[4][4] = 1.0
+concentrations[4][4] = 100.0
 
 # Define the AgentBasedSystem class
 class Agent:
@@ -34,18 +34,18 @@ class AgentBasedSystem:
                 total_concentration = agent.concentration
                 num_adjacent_cells = 1
 
-                if i > 0:
-                    total_concentration += self.grid[i - 1][j].concentration
-                    num_adjacent_cells += 1
-                if i < self.height - 1:
-                    total_concentration += self.grid[i + 1][j].concentration
-                    num_adjacent_cells += 1
-                if j > 0:
-                    total_concentration += self.grid[i][j - 1].concentration
-                    num_adjacent_cells += 1
-                if j < self.width - 1:
-                    total_concentration += self.grid[i][j + 1].concentration
-                    num_adjacent_cells += 1
+                # Calculate adjacent cell indices with periodic boundary conditions
+                left = (j - 1) % self.width
+                right = (j + 1) % self.width
+                up = (i - 1) % self.height
+                down = (i + 1) % self.height
+
+                total_concentration += self.grid[i][left].concentration
+                total_concentration += self.grid[i][right].concentration
+                total_concentration += self.grid[up][j].concentration
+                total_concentration += self.grid[down][j].concentration
+
+                num_adjacent_cells += 4
 
                 new_concentration = total_concentration / num_adjacent_cells
                 new_agent = Agent(new_concentration)
@@ -53,20 +53,38 @@ class AgentBasedSystem:
 
         self.grid = new_grid
 
-# Create the agent-based system
-system = AgentBasedSystem(width, height)
-system.initialize_agents(concentrations)
+class Run:
+    def __init__(self, width, height, concentrations):
+        self.system = AgentBasedSystem(width, height)
+        self.system.initialize_agents(concentrations)
+
+    def run_simulation(self, num_timesteps):
+        for timestep in range(num_timesteps):
+            self.system.diffuse()
+
+    def visualize_initial_state(self):
+        plt.imshow(concentrations, cmap='hot', interpolation='nearest', vmin=0, vmax=2)
+        plt.colorbar()
+        plt.title('Initial Concentrations')
+        plt.show()
+
+    def visualize_final_state(self):
+        final_concentrations = [[agent.concentration for agent in row] for row in self.system.grid]
+        plt.imshow(final_concentrations, cmap='hot', interpolation='nearest', vmin=0, vmax=2)
+        plt.colorbar()
+        plt.title('Final Concentrations')
+        plt.show()
+
+# Create the run instance
+run = Run(width, height, concentrations)
 
 # Visualize the initial state
-plt.imshow(concentrations, cmap='hot', interpolation='nearest')
-plt.colorbar()
-plt.title('Initial Concentrations')
-plt.show()
+run.visualize_initial_state()
 
-# Perform diffusion and visualize the final state
-system.diffuse()
-final_concentrations = [[agent.concentration for agent in row] for row in system.grid]
-plt.imshow(final_concentrations, cmap='hot', interpolation='nearest')
-plt.colorbar()
-plt.title('Final Concentrations')
-plt.show()
+# Perform diffusion
+num_timesteps = 100  # Number of diffusion steps
+run.run_simulation(num_timesteps)
+
+# Visualize the final state
+run.visualize_final_state()
+
