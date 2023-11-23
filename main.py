@@ -2,12 +2,12 @@ import matplotlib.pyplot as plt
 import random
 
 # Define the system dimensions
-width = 30
-height = 30
+width = 5
+height = 5
 
 # Define the initial concentrations
 concentrations = [[0.0 for _ in range(width)] for _ in range(height)]
-concentrations[4][4] = 600
+concentrations[4][4] = 20
 #concentrations[35][35] = 300
 
 # Define the AgentBasedSystem class
@@ -77,6 +77,7 @@ class AgentBasedSystem:
 
                 differences = [current_concentration - concentration for concentration in adjacent_concentrations]
                 probabilities = [max(0, difference) for difference in differences]
+                print(adjacent_concentrations)
                 total_probability = sum(probabilities)
 
                 # Calculate the probabilities for staying in the current cell
@@ -130,7 +131,7 @@ run = Run(width, height, concentrations)
 run.visualize_initial_state()
 
 # Perform diffusion
-num_timesteps = 80  # Number of diffusion steps
+num_timesteps = 5  # Number of diffusion steps
 run.run_simulation(num_timesteps)
 
 # Visualize the final state
