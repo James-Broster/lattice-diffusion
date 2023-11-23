@@ -1,48 +1,43 @@
-import numpy as np
-import matplotlib.pyplot as plt
+class Agent:
+    def __init__(self, concentration):
+        self.concentration = concentration
 
 class AgentBasedSystem:
-    def __init__(self, size):
-        self.size = size
-        self.grid = np.zeros((size, size))
-    
-    def initialize_molecules(self, num_molecules):
-        indices = np.random.choice(range(self.size**2), size=num_molecules, replace=False)
-        self.grid = np.zeros((self.size, self.size))
-        self.grid[np.unravel_index(indices, (self.size, self.size))] = 1
-    
-    def diffuse(self, num_iterations):
-        for _ in range(num_iterations):
-            new_grid = np.zeros((self.size, self.size))
-            for i in range(self.size):
-                for j in range(self.size):
-                    neighbors = self.get_neighbors(i, j)
-                    concentration = np.sum(self.grid[neighbors]) / len(neighbors)
-                    new_grid[i, j] = concentration
-            self.grid = new_grid
-    
-    def get_neighbors(self, i, j):
-        neighbors = []
-        for di in [-1, 0, 1]:
-            for dj in [-1, 0, 1]:
-                if di == 0 and dj == 0:
-                    continue
-                ni = (i + di) % self.size
-                nj = (j + dj) % self.size
-                neighbors.append((ni, nj))
-        return neighbors
-    
-    def plot(self):
-        plt.imshow(self.grid, cmap='hot', interpolation='nearest')
-        plt.colorbar()
-        plt.show()
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.grid = [[None for _ in range(width)] for _ in range(height)]
 
-# Example usage
-size = 10
-num_molecules = 20
-num_iterations = 100
+    def initialize_agents(self, concentrations):
+        for i in range(self.height):
+            for j in range(self.width):
+                concentration = concentrations[i][j]
+                agent = Agent(concentration)
+                self.grid[i][j] = agent
 
-system = AgentBasedSystem(size)
-system.initialize_molecules(num_molecules)
-system.diffuse(num_iterations)
-system.plot()
+    def diffuse(self):
+        new_grid = [[None for _ in range(self.width)] for _ in range(self.height)]
+        for i in range(self.height):
+            for j in range(self.width):
+                agent = self.grid[i][j]
+                total_concentration = agent.concentration
+                num_adjacent_cells = 1
+
+                if i > 0:
+                    total_concentration += self.grid[i - 1][j].concentration
+                    num_adjacent_cells += 1
+                if i < self.height - 1:
+                    total_concentration += self.grid[i + 1][j].concentration
+                    num_adjacent_cells += 1
+                if j > 0:
+                    total_concentration += self.grid[i][j - 1].concentration
+                    num_adjacent_cells += 1
+                if j < self.width - 1:
+                    total_concentration += self.grid[i][j + 1].concentration
+                    num_adjacent_cells += 1
+
+                new_concentration = total_concentration / num_adjacent_cells
+                new_agent = Agent(new_concentration)
+                new_grid[i][j] = new_agent
+
+        self.grid = new_grid
