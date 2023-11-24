@@ -7,7 +7,7 @@ import imageio.v2 as imageio
 from tqdm import tqdm
 import tempfile
 from pathlib import Path
-from icecream import ic
+#from icecream import ic
 
 class LatticeSimulation:
     def __init__(self, size, num_species, species_sizes, alpha_matrix, gamma, temp, k_B=1.0):
@@ -77,6 +77,42 @@ class LatticeSimulation:
         plt.ylabel('Number of Particles')
         plt.grid(True)
 
+    def plot_rgb(self):
+        
+        if len(self.lattice.shape[1]) != len(colors):
+            raise ValueError("Number of intensity matrices and colors must be the same.")
+
+        # Initialize the final 2m x 2n x 3 (RGB) array
+        final_array = np.zeros((2*m, 2*n, 3))
+
+        # For each color, assign its intensity to the appropriate positions
+        for idx, (matrix, color) in enumerate(zip(intensity_matrices, colors)):
+            # Expand the m x n matrix to 2m x 2n
+            expanded_matrix = np.repeat(np.repeat(matrix, 2, axis=1), 2, axis=0)
+
+            # Apply the color to the expanded matrix
+            colored_matrix = np.zeros((2*m, 2*n, 3))
+            for i in range(3): # RGB channels
+                colored_matrix[:, :, i] = expanded_matrix * color[i]
+
+            # Assign to the final array
+            if idx == 0: # Top-left
+                final_array[0::2, 0::2, :] += colored_matrix[0::2, 0::2, :]
+            elif idx == 1: # Top-right
+                final_array[0::2, 1::2, :] += colored_matrix[0::2, 1::2, :]
+            elif idx == 2: # Bottom-left
+                final_array[1::2, 0::2, :] += colored_matrix[1::2, 0::2, :]
+            elif idx == 3: # Bottom-right
+                final_array[1::2, 1::2, :] += colored_matrix[1::2, 1::2, :]
+
+        # Clip values to be in the range [0, 1]
+        final_array = np.clip(final_array, 0, 1)
+
+        # Plot the final array
+        plt.imshow(final_array)
+        plt.axis('off')
+        plt.show()
+
     def run_simulation_with_visualization(self, steps, gif_name='simulation.gif'):
         temp_dir = Path(tempfile.mkdtemp())  # Create a temporary directory
 
@@ -90,6 +126,7 @@ class LatticeSimulation:
                 plt.savefig(filename)
                 plt.close()
                 filenames.append(filename)
+                print(self.lattice)
 
         # Create an animated gif from the images
         with imageio.get_writer(gif_name, mode='I') as writer:
@@ -107,6 +144,30 @@ class LatticeSimulation:
         print(f"GIF saved as {gif_name}")
 
 
+# Convert a HEX code to Matplotlib RGB
+def hex_to_rgb(hex_code, rgb01_o=True):
+    """
+    hex_code: str
+    The input HEX code for conversion
+    
+    rgb01_o: Boolean
+    Outputs the RGB in 0 to 1 range for matplotlib if True
+    """
+
+    h = hex_code.lstrip('#')
+    rgb =  tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+    
+    if rgb01_o is True:
+        rgb01 = tuple(np.array(rgb) / 255)
+        return rgb01
+        
+    else:
+        return rgb
+
+# Define custom colors as RGB tuples
+hex_colors_list = ['#00BCFA', '#143CC7', '#DB4300', '#710BDB'] # Aqua, Blue, RedOrange, Purple # #00DBC1 
+custom_colors = [hex_to_rgb(hex_code) for hex_code in hex_colors_list]
+
 # Example usage
 size = 10        # Size of the lattice
 num_species = 3
@@ -119,7 +180,7 @@ alpha = np.matrix([
 gamma = 1      # Strength of diffusion
 temp = 1        # Temperature
 num_particles = np.array([100, 70, 30])
-steps = 10000      # Number of steps to simulate
+steps = 1000      # Number of steps to simulate
 
 # Example usage
 simulation = LatticeSimulation(size, num_species, normalised_species_sizes, alpha, gamma, temp)
